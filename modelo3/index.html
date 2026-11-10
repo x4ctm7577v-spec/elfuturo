@@ -209,7 +209,7 @@ footer b{color:#fff}
 </head>
 <body>
 <button class="music hint" id="musicBtn" aria-label="Música de fondo"><span class="mi-ic">🎵</span><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="mi-tx" id="musicTx">Toca para escuchar</span></button>
-<audio id="bgm" src="../jingle.mp3" loop preload="auto"></audio>
+<audio id="bgm" src="../jingle.mp3" loop preload="auto" playsinline></audio>
 <div class="intro" id="intro" aria-hidden="true"><div class="ring"></div><div class="lg"></div></div>
 <div class="proto"><b>PROTOTIPO · MODELO 3</b> · Vista previa de cómo quedaría la página oficial de Futuro Supermarket · <a href="/">Ver Modelo 1</a><a href="/modelo2/">Ver Modelo 2</a><a href="#que-hace">¿Qué hace?</a></div>
 <div class="frame"><div class="page">
@@ -339,12 +339,13 @@ document.querySelectorAll(".rv").forEach(el=>io.observe(el));
  let muted=false;try{muted=localStorage.getItem("futuroMusic")==="off"}catch(e){}
  const ui=on=>{b.classList.toggle("on",on);b.classList.remove("hint");tx.textContent=on?"Música":"Música apagada";b.querySelector(".mi-ic").textContent=on?"🔊":"🔇"};
  const fade=()=>{a.volume=0;let v=0;const t=setInterval(()=>{v=Math.min(.45,v+.03);a.volume=v;if(v>=.45)clearInterval(t)},80)};
- const start=()=>{if(muted)return;const p=a.play();if(p)p.then(()=>{fade();ui(true)}).catch(()=>{})};
- const first=e=>{if(e.target.closest&&e.target.closest("#musicBtn"))return;start();off()};
- const off=()=>["pointerdown","keydown","touchstart"].forEach(ev=>document.removeEventListener(ev,first,true));
- ["pointerdown","keydown","touchstart"].forEach(ev=>document.addEventListener(ev,first,true));
+ const EV=["click","touchend","keydown"];
+ const off=()=>EV.forEach(ev=>document.removeEventListener(ev,first,true));
+ const start=()=>{if(muted){off();return}if(!a.paused)return;a.muted=false;const p=a.play();if(p)p.then(()=>{off();fade();ui(true)}).catch(()=>{})};
+ const first=e=>{if(e.target.closest&&e.target.closest("#musicBtn"))return;start()};
+ EV.forEach(ev=>document.addEventListener(ev,first,true));
  if(muted){b.classList.remove("hint");tx.textContent="Música apagada";b.querySelector(".mi-ic").textContent="🔇"}
- b.onclick=()=>{off();if(a.paused){muted=false;try{localStorage.setItem("futuroMusic","on")}catch(e){}a.play().then(()=>{fade();ui(true)}).catch(()=>{})}else{a.pause();muted=true;try{localStorage.setItem("futuroMusic","off")}catch(e){}ui(false)}};
+ b.onclick=()=>{off();if(a.paused){a.muted=false;a.volume=.45;muted=false;try{localStorage.setItem("futuroMusic","on")}catch(e){}a.play().then(()=>{fade();ui(true)}).catch(()=>{})}else{a.pause();muted=true;try{localStorage.setItem("futuroMusic","off")}catch(e){}ui(false)}};
  document.addEventListener("visibilitychange",()=>{if(document.hidden&&!a.paused){a.pause();a.dataset.resume="1"}else if(!document.hidden&&a.dataset.resume){a.dataset.resume="";a.play().catch(()=>{})}});
 })();
 </script>
