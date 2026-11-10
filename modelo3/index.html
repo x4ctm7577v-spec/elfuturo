@@ -191,9 +191,25 @@ footer b{color:#fff}
 .fxg .rv:nth-child(4n+2){transition-delay:.08s}.fxg .rv:nth-child(4n+3){transition-delay:.16s}.fxg .rv:nth-child(4n+4){transition-delay:.24s}
 @media(max-width:1000px){.fxg{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.feat3{padding:44px 16px}.fxg{grid-template-columns:1fr}}
+
+/* ===== música ===== */
+.music{position:fixed;left:16px;bottom:16px;z-index:60;display:flex;align-items:center;gap:10px;background:#111a14;color:#fff;border-radius:999px;padding:8px 16px 8px 8px;box-shadow:0 12px 30px rgba(0,0,0,.3);font-weight:700;font-size:.85rem;font-family:inherit;cursor:pointer;border:0;transition:transform .2s}
+.music:hover{transform:translateY(-2px)}
+.music .mi-ic{width:38px;height:38px;border-radius:50%;background:#f2a541;display:grid;place-items:center;font-size:1.05rem}
+.music .eq{display:none;align-items:flex-end;gap:2px;height:16px}
+.music .eq i{width:3px;background:#f2a541;border-radius:2px;animation:eqb 1s ease-in-out infinite}
+.music .eq i:nth-child(2){animation-delay:-.3s}.music .eq i:nth-child(3){animation-delay:-.6s}.music .eq i:nth-child(4){animation-delay:-.15s}
+@keyframes eqb{0%,100%{height:4px}50%{height:16px}}
+.music.on .eq{display:flex}
+.music.hint .mi-tx{animation:mpulse 1.6s ease-in-out infinite}
+@keyframes mpulse{50%{opacity:.55}}
+.ownerbtn{bottom:84px!important}
+@media(max-width:760px){.music{bottom:16px;padding:6px 12px 6px 6px;font-size:.78rem}.music .mi-ic{width:34px;height:34px}.ownerbtn{bottom:76px!important}}
 </style>
 </head>
 <body>
+<button class="music hint" id="musicBtn" aria-label="Música de fondo"><span class="mi-ic">🎵</span><span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="mi-tx" id="musicTx">Toca para escuchar</span></button>
+<audio id="bgm" src="../jingle.mp3" loop preload="auto"></audio>
 <div class="intro" id="intro" aria-hidden="true"><div class="ring"></div><div class="lg"></div></div>
 <div class="proto"><b>PROTOTIPO · MODELO 3</b> · Vista previa de cómo quedaría la página oficial de Futuro Supermarket · <a href="/">Ver Modelo 1</a><a href="/modelo2/">Ver Modelo 2</a><a href="#que-hace">¿Qué hace?</a></div>
 <div class="frame"><div class="page">
@@ -313,10 +329,24 @@ $("#yr").textContent=new Date().getFullYear();
  S.forEach((_,i)=>{const b=document.createElement("button");b.setAttribute("aria-label","Foto "+(i+1));b.onclick=()=>go(i);D.appendChild(b)});
  function go(i){S[k].classList.remove("on");k=i;S[k].classList.add("on");[...D.children].forEach((b,j)=>b.classList.toggle("on",j===k))}
  go(0);setInterval(()=>go((k+1)%S.length),4500)})();
-(function(){try{const h=new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"})).getHours();$("#openTxt").textContent=h>=6&&h<20?"Abierto ahora · hasta las 8pm":"Cerrado · abrimos a las 6am"}catch(e){}})();
+(function(){try{const h=new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"})).getHours();const o=h>=6&&h<20;$("#openTxt").textContent=o?"Abierto ahora · hasta las 8pm":"Cerrado · abrimos a las 6am";if(!o)document.querySelector(".open i").style.background="#f87171"}catch(e){}})();
 (function(){const pad=n=>String(n).padStart(2,"0");const tick=()=>{try{const now=new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));const end=new Date(now);end.setDate(now.getDate()+((7-now.getDay())%7));end.setHours(20,0,0,0);if(end<=now)end.setDate(end.getDate()+7);let t=Math.floor((end-now)/1000);const d=Math.floor(t/86400);t%=86400;$("#cdD").textContent=d;$("#cdH").textContent=pad(Math.floor(t/3600));$("#cdM").textContent=pad(Math.floor(t%3600/60));$("#cdS").textContent=pad(t%60)}catch(e){}};tick();setInterval(tick,1000)})();
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add("in");io.unobserve(e.target)}}),{threshold:.12});
 document.querySelectorAll(".rv").forEach(el=>io.observe(el));
+
+/* ===== música de fondo ===== */
+(function(){const a=document.getElementById("bgm"),b=document.getElementById("musicBtn"),tx=document.getElementById("musicTx");if(!a||!b)return;
+ let muted=false;try{muted=localStorage.getItem("futuroMusic")==="off"}catch(e){}
+ const ui=on=>{b.classList.toggle("on",on);b.classList.remove("hint");tx.textContent=on?"Música":"Música apagada";b.querySelector(".mi-ic").textContent=on?"🔊":"🔇"};
+ const fade=()=>{a.volume=0;let v=0;const t=setInterval(()=>{v=Math.min(.45,v+.03);a.volume=v;if(v>=.45)clearInterval(t)},80)};
+ const start=()=>{if(muted)return;const p=a.play();if(p)p.then(()=>{fade();ui(true)}).catch(()=>{})};
+ const first=e=>{if(e.target.closest&&e.target.closest("#musicBtn"))return;start();off()};
+ const off=()=>["pointerdown","keydown","touchstart"].forEach(ev=>document.removeEventListener(ev,first,true));
+ ["pointerdown","keydown","touchstart"].forEach(ev=>document.addEventListener(ev,first,true));
+ if(muted){b.classList.remove("hint");tx.textContent="Música apagada";b.querySelector(".mi-ic").textContent="🔇"}
+ b.onclick=()=>{off();if(a.paused){muted=false;try{localStorage.setItem("futuroMusic","on")}catch(e){}a.play().then(()=>{fade();ui(true)}).catch(()=>{})}else{a.pause();muted=true;try{localStorage.setItem("futuroMusic","off")}catch(e){}ui(false)}};
+ document.addEventListener("visibilitychange",()=>{if(document.hidden&&!a.paused){a.pause();a.dataset.resume="1"}else if(!document.hidden&&a.dataset.resume){a.dataset.resume="";a.play().catch(()=>{})}});
+})();
 </script>
 </body>
 </html>
